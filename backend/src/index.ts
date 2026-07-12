@@ -5,6 +5,7 @@ import { env } from "./config/env";
 import { prisma } from "./config/db";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { authRouter } from "./modules/auth/auth.routes";
+import { vehicleRouter } from "./modules/vehicles/vehicle.routes";
 
 const app = express();
 
@@ -23,8 +24,9 @@ app.get("/api/health", async (_req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/vehicles", vehicleRouter);
 
-// Module routers will continue to be mounted here (vehicles, drivers, trips, ...)
+// Module routers will continue to be mounted here (drivers, trips, ...)
 
 // ---------- Error handling (must stay last) ----------
 app.use(notFoundHandler);
