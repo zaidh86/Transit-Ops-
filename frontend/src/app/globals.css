@@ -1,26 +1,104 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
+/*
+  TransitOps design tokens — "dispatch console" system.
+  Base is warm graphite (not pure black), one functional amber signal accent
+  for primary actions, and dedicated status colors reused everywhere an
+  entity (vehicle / driver / trip) carries a status: sidebar, badges, table
+  rows, the "status rail" edge on cards.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0F1216;
+  --surface: #171B21;
+  --surface-raised: #1D222A;
+  --border: #262C35;
+  --border-strong: #333A45;
+
+  --foreground: #E8EAED;
+  --muted: #8B93A1;
+  --muted-2: #5B6472;
+
+  --accent: #F5A623;
+  --accent-foreground: #14171C;
+  --accent-muted: #F5A62322;
+
+  --status-available: #34C77B;
+  --status-ontrip: #4C8DFF;
+  --status-shop: #F5A623;
+  --status-suspended: #E5484D;
+  --status-retired: #6B7280;
+
+  --radius: 0.5rem;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-status-available: var(--status-available);
+  --color-status-ontrip: var(--status-ontrip);
+  --color-status-shop: var(--status-shop);
+  --color-status-suspended: var(--status-suspended);
+  --color-status-retired: var(--status-retired);
+
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-space-grotesk);
+  --font-mono: var(--font-jetbrains-mono);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+/* thin scrollbars for a console feel */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TransitOps — Frontend
 
-## Getting Started
+Next.js (App Router) + TypeScript + Tailwind v4 + shadcn-style UI + Framer Motion + TanStack Query.
 
-First, run the development server:
+## Setup
 
 ```bash
+npm install
+cp .env.local.example .env.local   # point NEXT_PUBLIC_API_URL at your Express backend
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What's wired up so far (Auth + RBAC + shell)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **`src/lib/api.ts`** — axios instance, attaches the JWT to every request, redirects to `/login` on 401.
+- **`src/lib/auth-context.tsx`** — `AuthProvider` / `useAuth()`. Login hits `POST /auth/login`
+  (expects `{ token, user }`), stores the JWT in a cookie, decodes role/name/email from the JWT
+  on refresh via `jwt-decode`.
+- **`src/proxy.ts`** — route gate (Next.js 16's renamed `middleware.ts`). Redirects to `/login`
+  if the auth cookie is missing; redirects away from `/login` if it's present. Real RBAC
+  enforcement stays on the backend — this is just fast, cookie-presence routing.
+- **`src/components/auth/RoleGuard.tsx`** — wrap any page's content in
+  `<RoleGuard allow={["FLEET_MANAGER"]}>…</RoleGuard>` to restrict it client-side.
+- **`src/components/layout/`** — `Sidebar` (role-filtered nav), `Navbar` (user menu + logout),
+  `DashboardShell` (combines both, animated mobile drawer).
+- **`src/app/(dashboard)/`** — protected route group; `dashboard/page.tsx` is a working example
+  pulling KPIs via `useQuery` from `GET /analytics/dashboard`.
+- **`src/lib/constants.ts`** — `NAV_ITEMS` (edit `roles: []` per item to control who sees what
+  in the sidebar) and the status-color maps used by `<StatusBadge />`.
+- **`src/types/index.ts`** — types for every entity in the spec (Vehicle, Driver, Trip,
+  MaintenanceLog, FuelLog, Expense, DashboardKpis) — adjust field names if your Prisma schema
+  differs.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Design system
 
-## Learn More
+Dark "dispatch console" theme — graphite surfaces, one amber signal accent for primary actions,
+dedicated status colors (available/on-trip/in-shop/suspended/retired) reused everywhere as a
+colored 3px rail (`<Card accentColor="...">`) and in `<StatusBadge />`. Type: Space Grotesk
+(display), Inter (UI/body), JetBrains Mono (registration numbers, odometer, IDs — anything that's
+"data"). All tokens live in `src/app/globals.css`.
 
-To learn more about Next.js, take a look at the following resources:
+## Next screens to build (same pattern each time)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Vehicles, Drivers, Trips, Maintenance, Fuel & Expenses, Reports & Analytics — each as
+`src/app/(dashboard)/<name>/page.tsx`, wrapped in `<RoleGuard>` per §2 Target Users, using
+`useQuery`/`useMutation` against your Express routes via `api` from `src/lib/api.ts`.
