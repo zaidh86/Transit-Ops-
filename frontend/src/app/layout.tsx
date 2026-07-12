@@ -38,7 +38,7 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn("h-full", "antialiased", "dark", inter.variable, spaceGrotesk.variable, jetbrainsMono.variable, "font-sans", geist.variable)}
     >
-      <head />
+     <head />
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <Script id="theme-bootstrap" strategy="beforeInteractive">
           {"(function(){try{var t=localStorage.getItem('theme');var p=window.matchMedia('(prefers-color-scheme: dark)').matches;var d=t?t==='dark':p;document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';}catch(e){}})();"}

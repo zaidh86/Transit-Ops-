@@ -5,6 +5,10 @@ import { env } from "./config/env";
 import { prisma } from "./config/db";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { authRouter } from "./modules/auth/auth.routes";
+import { driversRouter } from "./modules/drivers/drivers.routes";
+import { maintenanceRouter } from "./modules/maintenance/maintenance.routes";
+import { expensesRouter } from "./modules/expenses/expenses.routes";
+import { analyticsRouter } from "./modules/analytics/analytics.routes";
 
 const app = express();
 
@@ -23,6 +27,10 @@ app.get("/api/health", async (_req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/drivers", driversRouter);
+app.use("/api/maintenance", maintenanceRouter);
+app.use("/api/expenses", expensesRouter);
+app.use("/api/analytics", analyticsRouter);
 
 // Module routers will continue to be mounted here (vehicles, drivers, trips, ...)
 

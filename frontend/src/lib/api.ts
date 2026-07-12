@@ -21,7 +21,13 @@ api.interceptors.request.use((config) => {
 
 // Normalize errors and handle expired/invalid sessions in one place.
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const payload = response.data;
+    if (payload && typeof payload === "object" && "success" in payload && "data" in payload) {
+      return { ...response, data: payload.data };
+    }
+    return response;
+  },
   (error: AxiosError<ApiErrorShape>) => {
     if (error.response?.status === 401) {
       Cookies.remove(TOKEN_COOKIE);

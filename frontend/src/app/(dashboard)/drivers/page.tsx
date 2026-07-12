@@ -1,56 +1,29 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ModulePage } from "@/components/feature/ModulePage";
+import api from "@/lib/api";
 import { DRIVER_STATUS_META } from "@/lib/constants";
 import type { Driver } from "@/types";
 
-const drivers: Driver[] = [
-  {
-    id: "drv-001",
-    name: "Alex Morgan",
-    licenseNumber: "DL-10458",
-    licenseCategory: "C1",
-    licenseExpiryDate: "2027-02-14",
-    contactNumber: "+1-555-0104",
-    safetyScore: 96,
-    status: "AVAILABLE",
-  },
-  {
-    id: "drv-002",
-    name: "Fatima Hassan",
-    licenseNumber: "DL-20481",
-    licenseCategory: "C",
-    licenseExpiryDate: "2026-10-02",
-    contactNumber: "+1-555-0116",
-    safetyScore: 91,
-    status: "ON_TRIP",
-  },
-  {
-    id: "drv-003",
-    name: "Jordan Lee",
-    licenseNumber: "DL-11922",
-    licenseCategory: "B",
-    licenseExpiryDate: "2026-12-09",
-    contactNumber: "+1-555-0142",
-    safetyScore: 78,
-    status: "SUSPENDED",
-  },
-  {
-    id: "drv-004",
-    name: "Priya Nair",
-    licenseNumber: "DL-30915",
-    licenseCategory: "C1",
-    licenseExpiryDate: "2026-08-20",
-    contactNumber: "+1-555-0189",
-    safetyScore: 88,
-    status: "OFF_DUTY",
-  },
-];
+async function fetchDrivers(): Promise<Driver[]> {
+  const { data } = await api.get<{ drivers: Driver[] }>("/drivers");
+  return data.drivers;
+}
 
 export default function DriversPage() {
+  const { data: drivers = [], isLoading } = useQuery({
+    queryKey: ["drivers"],
+    queryFn: fetchDrivers,
+  });
+
+  const availableCount = drivers.filter((driver) => driver.status === "AVAILABLE").length;
+  const onTripCount = drivers.filter((driver) => driver.status === "ON_TRIP").length;
+  const suspendedCount = drivers.filter((driver) => driver.status === "SUSPENDED").length;
+
   return (
     <ModulePage
       eyebrow="Fleet / drivers"
@@ -65,10 +38,10 @@ export default function DriversPage() {
         </>
       }
       stats={[
-        { label: "Registered", value: "18" },
-        { label: "Available", value: "9" },
-        { label: "On trip", value: "5" },
-        { label: "Suspended", value: "1" },
+        { label: "Registered", value: String(drivers.length) },
+        { label: "Available", value: String(availableCount) },
+        { label: "On trip", value: String(onTripCount) },
+        { label: "Suspended", value: String(suspendedCount) },
       ]}
       panels={[
         {
@@ -90,7 +63,19 @@ export default function DriversPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {drivers.map((driver) => {
+                  {isLoading ? (
+                    <tr>
+                      <td className="py-6 text-sm text-muted" colSpan={7}>
+                        Loading drivers…
+                      </td>
+                    </tr>
+                  ) : drivers.length === 0 ? (
+                    <tr>
+                      <td className="py-6 text-sm text-muted" colSpan={7}>
+                        No drivers found.
+                      </td>
+                    </tr>
+                  ) : drivers.map((driver) => {
                     const meta = DRIVER_STATUS_META[driver.status];
                     return (
                       <tr key={driver.id} className="border-b border-border/60 last:border-0">

@@ -1,22 +1,31 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ModulePage } from "@/components/feature/ModulePage";
+import api from "@/lib/api";
+import type { Expense, FuelLog } from "@/types";
 
-const fuelLogs = [
-  { id: "fuel-001", vehicleId: "veh-001", liters: 82, cost: 128, date: "2026-07-12" },
-  { id: "fuel-002", vehicleId: "veh-002", liters: 190, cost: 312, date: "2026-07-11" },
-  { id: "fuel-003", vehicleId: "veh-003", liters: 65, cost: 109, date: "2026-07-10" },
-];
-
-const expenses = [
-  { id: "exp-001", vehicleId: "veh-001", category: "Toll", amount: 24, date: "2026-07-12", notes: "North corridor" },
-  { id: "exp-002", vehicleId: "veh-003", category: "Maintenance", amount: 340, date: "2026-07-12", notes: "Oil change" },
-  { id: "exp-003", vehicleId: "veh-002", category: "Cleaning", amount: 45, date: "2026-07-11", notes: "Post-route" },
-];
+async function fetchExpenseModule(): Promise<{ fuelLogs: FuelLog[]; expenses: Expense[] }> {
+  const { data } = await api.get<{ fuelLogs: FuelLog[]; expenses: Expense[] }>("/expenses");
+  return data;
+}
 
 export default function ExpensesPage() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["expenses"],
+    queryFn: fetchExpenseModule,
+  });
+
+  const fuelLogs = data?.fuelLogs ?? [];
+  const expenses = data?.expenses ?? [];
+  const fuelCost = fuelLogs.reduce((sum, log) => sum + log.cost, 0);
+  const otherExpenseCost = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const maintenanceCost = expenses
+    .filter((expense) => expense.category.toLowerCase().includes("maintenance"))
+    .reduce((sum, expense) => sum + expense.amount, 0);
+
   return (
     <ModulePage
       eyebrow="Finance / fuel & expenses"
@@ -31,10 +40,10 @@ export default function ExpensesPage() {
         </>
       }
       stats={[
-        { label: "Fuel cost", value: "$549" },
-        { label: "Other expenses", value: "$109" },
-        { label: "Maintenance cost", value: "$1.4k" },
-        { label: "Operational total", value: "$2.1k" },
+        { label: "Fuel cost", value: `$${fuelCost.toLocaleString()}` },
+        { label: "Other expenses", value: `$${otherExpenseCost.toLocaleString()}` },
+        { label: "Maintenance cost", value: `$${maintenanceCost.toLocaleString()}` },
+        { label: "Operational total", value: `$${(fuelCost + otherExpenseCost).toLocaleString()}` },
       ]}
       panels={[
         {
@@ -53,7 +62,19 @@ export default function ExpensesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {fuelLogs.map((log) => (
+                  {isLoading ? (
+                    <tr>
+                      <td className="py-6 text-sm text-muted" colSpan={4}>
+                        Loading fuel logs…
+                      </td>
+                    </tr>
+                  ) : fuelLogs.length === 0 ? (
+                    <tr>
+                      <td className="py-6 text-sm text-muted" colSpan={4}>
+                        No fuel logs found.
+                      </td>
+                    </tr>
+                  ) : fuelLogs.map((log) => (
                     <tr key={log.id} className="border-b border-border/60 last:border-0">
                       <td className="py-3 pr-4 font-mono text-xs text-foreground">{log.vehicleId}</td>
                       <td className="py-3 pr-4 text-muted">{log.liters} L</td>
@@ -72,7 +93,11 @@ export default function ExpensesPage() {
           accentColor: "var(--status-shop)",
           children: (
             <div className="space-y-3 text-sm text-muted">
-              {expenses.map((expense) => (
+              {isLoading ? (
+                <div className="rounded-md border border-border bg-background/50 p-4">Loading expenses…</div>
+              ) : expenses.length === 0 ? (
+                <div className="rounded-md border border-border bg-background/50 p-4">No expense records found.</div>
+              ) : expenses.map((expense) => (
                 <div key={expense.id} className="rounded-md border border-border bg-background/50 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>

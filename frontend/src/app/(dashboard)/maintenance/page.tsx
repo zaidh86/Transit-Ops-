@@ -1,42 +1,29 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ModulePage } from "@/components/feature/ModulePage";
 import { VEHICLE_STATUS_META } from "@/lib/constants";
+import api from "@/lib/api";
+import type { MaintenanceLog } from "@/types";
 
-const records = [
-  {
-    id: "mnt-001",
-    vehicleId: "veh-003",
-    description: "Oil change and inspection",
-    cost: 340,
-    isActive: true,
-    createdAt: "2026-07-12",
-    closedAt: undefined,
-  },
-  {
-    id: "mnt-002",
-    vehicleId: "veh-001",
-    description: "Brake pad replacement",
-    cost: 780,
-    isActive: false,
-    createdAt: "2026-07-01",
-    closedAt: "2026-07-04",
-  },
-  {
-    id: "mnt-003",
-    vehicleId: "veh-004",
-    description: "Electrical diagnostics",
-    cost: 210,
-    isActive: false,
-    createdAt: "2026-06-25",
-    closedAt: "2026-06-27",
-  },
-];
+async function fetchMaintenanceLogs(): Promise<MaintenanceLog[]> {
+  const { data } = await api.get<{ maintenanceLogs: MaintenanceLog[] }>("/maintenance");
+  return data.maintenanceLogs;
+}
 
 export default function MaintenancePage() {
+  const { data: records = [], isLoading } = useQuery({
+    queryKey: ["maintenance"],
+    queryFn: fetchMaintenanceLogs,
+  });
+
+  const activeCount = records.filter((record) => record.isActive).length;
+  const closedCount = records.length - activeCount;
+  const totalCost = records.reduce((sum, record) => sum + record.cost, 0);
+
   return (
     <ModulePage
       eyebrow="Fleet / maintenance"
@@ -51,10 +38,10 @@ export default function MaintenancePage() {
         </>
       }
       stats={[
-        { label: "Active logs", value: "1" },
-        { label: "Closed logs", value: "12" },
-        { label: "In shop", value: "3" },
-        { label: "Service cost", value: "$4.3k" },
+        { label: "Active logs", value: String(activeCount) },
+        { label: "Closed logs", value: String(closedCount) },
+        { label: "In shop", value: String(activeCount) },
+        { label: "Service cost", value: `$${totalCost.toLocaleString()}` },
       ]}
       panels={[
         {
@@ -63,7 +50,15 @@ export default function MaintenancePage() {
           accentColor: "var(--status-shop)",
           children: (
             <div className="space-y-3 text-sm">
-              {records.map((record) => {
+              {isLoading ? (
+                <div className="rounded-md border border-border bg-background/50 p-4 text-muted">
+                  Loading maintenance logs…
+                </div>
+              ) : records.length === 0 ? (
+                <div className="rounded-md border border-border bg-background/50 p-4 text-muted">
+                  No maintenance logs found.
+                </div>
+              ) : records.map((record) => {
                 const status = record.isActive ? VEHICLE_STATUS_META.IN_SHOP : VEHICLE_STATUS_META.AVAILABLE;
                 return (
                   <div key={record.id} className="rounded-md border border-border bg-background/50 p-4">
