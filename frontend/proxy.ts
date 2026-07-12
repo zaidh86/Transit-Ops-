@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TOKEN_COOKIE } from "@/lib/constants";
 
-const PUBLIC_PATHS = ["/login"];
-
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+  const isPublic = pathname === "/" || pathname.startsWith("/login");
   const token = request.cookies.get(TOKEN_COOKIE)?.value;
 
   // Note: this only checks *presence* of the token for a fast redirect.
@@ -17,7 +15,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isPublic && token) {
+  if (token && (pathname === "/" || pathname.startsWith("/login"))) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
