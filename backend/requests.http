@@ -242,3 +242,175 @@ Authorization: Bearer {{token}}
 ### Delete unknown vehicle → expect 404
 DELETE {{baseUrl}}/vehicles/unknown-id-123
 Authorization: Bearer {{token}}
+
+
+### ==================== TRIPS (Module 6) ====================
+# PREREQUISITE until the Drivers module merges: the Driver MODEL exists in the
+# schema, but there is no drivers API yet. Create one driver row via
+# `npm run db:studio` → Driver table → Add record:
+#   name: Alex, licenseNumber: DL-2201, licenseCategory: LMV,
+#   licenseExpiry: any FUTURE date, contactNumber: 9999999999
+#   (safetyScore and status use their defaults)
+# Then paste the generated id below. Once the Drivers module merges, replace
+# this with an auto-capture from their create endpoint.
+@driverRecordId = PASTE_DRIVER_ID_FROM_PRISMA_STUDIO
+
+### Login as Safety Officer (to demonstrate trips RBAC)
+# @name loginSafety
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "safety@transitops.dev",
+  "password": "password123"
+}
+
+### Safety Officer token
+@safetyToken = {{loginSafety.response.body.data.token}}
+
+### Create trip (Draft) — mirrors spec example workflow: 450 kg ≤ 500 kg
+# @name createTrip
+POST {{baseUrl}}/trips
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "source": "Hyderabad",
+  "destination": "Warangal",
+  "vehicleId": "{{vehicleId}}",
+  "driverId": "{{driverRecordId}}",
+  "cargoWeight": 450,
+  "plannedDistance": 150,
+  "revenue": 18000
+}
+
+### Captured trip id
+@tripId = {{createTrip.response.body.data.trip.id}}
+
+### Second Draft on the SAME vehicle+driver (allowed — statuses still AVAILABLE)
+# @name createTrip2
+POST {{baseUrl}}/trips
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "source": "Hyderabad",
+  "destination": "Karimnagar",
+  "vehicleId": "{{vehicleId}}",
+  "driverId": "{{driverRecordId}}",
+  "cargoWeight": 200,
+  "plannedDistance": 180
+}
+
+### Captured second trip id
+@tripId2 = {{createTrip2.response.body.data.trip.id}}
+
+### Overweight cargo → expect 409 (mandatory rule: cargo ≤ max load capacity)
+POST {{baseUrl}}/trips
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "source": "Hyderabad",
+  "destination": "Vijayawada",
+  "vehicleId": "{{vehicleId}}",
+  "driverId": "{{driverRecordId}}",
+  "cargoWeight": 600,
+  "plannedDistance": 275
+}
+
+### Unknown driver → expect 404
+POST {{baseUrl}}/trips
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "source": "Hyderabad",
+  "destination": "Nizamabad",
+  "vehicleId": "{{vehicleId}}",
+  "driverId": "unknown-driver-id",
+  "cargoWeight": 100,
+  "plannedDistance": 175
+}
+
+### Create trip as Safety Officer → expect 403 (RBAC)
+POST {{baseUrl}}/trips
+Content-Type: application/json
+Authorization: Bearer {{safetyToken}}
+
+{
+  "source": "Hyderabad",
+  "destination": "Warangal",
+  "vehicleId": "{{vehicleId}}",
+  "driverId": "{{driverRecordId}}",
+  "cargoWeight": 100,
+  "plannedDistance": 150
+}
+
+### Dispatch trip 1 → vehicle + driver flip to ON_TRIP atomically
+PATCH {{baseUrl}}/trips/{{tripId}}/dispatch
+Authorization: Bearer {{token}}
+
+### Verify: vehicle is now ON_TRIP
+GET {{baseUrl}}/vehicles/{{vehicleId}}
+Authorization: Bearer {{token}}
+
+### Dispatch trip 2 → expect 409 (vehicle/driver already On Trip)
+PATCH {{baseUrl}}/trips/{{tripId2}}/dispatch
+Authorization: Bearer {{token}}
+
+### Dispatch trip 1 again → expect 409 (only Draft trips can be dispatched)
+PATCH {{baseUrl}}/trips/{{tripId}}/dispatch
+Authorization: Bearer {{token}}
+
+### Complete trip 1 (spec example step 6: final odometer + fuel consumed)
+PATCH {{baseUrl}}/trips/{{tripId}}/complete
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "endOdometer": 12800,
+  "fuelConsumed": 42
+}
+
+### Verify: vehicle restored to AVAILABLE, odometer now 12800
+GET {{baseUrl}}/vehicles/{{vehicleId}}
+Authorization: Bearer {{token}}
+
+### Complete trip 1 again → expect 409
+PATCH {{baseUrl}}/trips/{{tripId}}/complete
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "endOdometer": 12900,
+  "fuelConsumed": 10
+}
+
+### Cancel Draft trip 2 → 200 (no status restore needed; never dispatched)
+PATCH {{baseUrl}}/trips/{{tripId2}}/cancel
+Authorization: Bearer {{token}}
+
+### Cancel completed trip 1 → expect 409
+PATCH {{baseUrl}}/trips/{{tripId}}/cancel
+Authorization: Bearer {{token}}
+
+### List all trips
+GET {{baseUrl}}/trips
+Authorization: Bearer {{token}}
+
+### Filter: completed trips
+GET {{baseUrl}}/trips?status=COMPLETED
+Authorization: Bearer {{token}}
+
+### Filter: by vehicle
+GET {{baseUrl}}/trips?vehicleId={{vehicleId}}
+Authorization: Bearer {{token}}
+
+### Get trip by id (includes vehicle + driver objects)
+GET {{baseUrl}}/trips/{{tripId}}
+Authorization: Bearer {{token}}
+
+### Unknown trip → expect 404
+GET {{baseUrl}}/trips/unknown-id-123
+Authorization: Bearer {{token}}

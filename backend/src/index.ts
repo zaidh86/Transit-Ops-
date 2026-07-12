@@ -4,15 +4,14 @@ import morgan from "morgan";
 import { env } from "./config/env";
 import { prisma } from "./config/db";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+
 import { authRouter } from "./modules/auth/auth.routes";
-<<<<<<< HEAD
+import { vehicleRouter } from "./modules/vehicles/vehicle.routes";
 import { driversRouter } from "./modules/drivers/drivers.routes";
+import { tripRouter } from "./modules/trips/trip.routes";
 import { maintenanceRouter } from "./modules/maintenance/maintenance.routes";
 import { expensesRouter } from "./modules/expenses/expenses.routes";
 import { analyticsRouter } from "./modules/analytics/analytics.routes";
-=======
-import { vehicleRouter } from "./modules/vehicles/vehicle.routes";
->>>>>>> 927dbf3c78145143dc1c6ea3215d76139eb592cf
 
 const app = express();
 
@@ -23,26 +22,26 @@ app.use(morgan("dev"));
 
 // ---------- Routes ----------
 app.get("/api/health", async (_req, res) => {
-  await prisma.$queryRaw`SELECT 1`; // verifies DB connectivity end-to-end
+  await prisma.$queryRaw`SELECT 1`;
+
   res.json({
     success: true,
-    data: { status: "ok", uptime: Math.round(process.uptime()) },
+    data: {
+      status: "ok",
+      uptime: Math.round(process.uptime()),
+    },
   });
 });
 
 app.use("/api/auth", authRouter);
-<<<<<<< HEAD
+app.use("/api/vehicles", vehicleRouter);
 app.use("/api/drivers", driversRouter);
+app.use("/api/trips", tripRouter);
 app.use("/api/maintenance", maintenanceRouter);
 app.use("/api/expenses", expensesRouter);
 app.use("/api/analytics", analyticsRouter);
-=======
-app.use("/api/vehicles", vehicleRouter);
->>>>>>> 927dbf3c78145143dc1c6ea3215d76139eb592cf
 
-// Module routers will continue to be mounted here (drivers, trips, ...)
-
-// ---------- Error handling (must stay last) ----------
+// ---------- Error handling ----------
 app.use(notFoundHandler);
 app.use(errorHandler);
 
