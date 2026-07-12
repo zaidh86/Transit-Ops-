@@ -97,18 +97,6 @@ export default function DashboardPage() {
           );
         })}
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Next up</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted">
-          Vehicle registry, driver management, trip dispatch, maintenance,
-          fuel &amp; expense tracking, and reports each get their own screen
-          under <code className="font-mono text-xs">src/app/(dashboard)/…</code>,
-          following this same shell + RoleGuard + react-query pattern.
-        </CardContent>
-      </Card>
     </div>
   );
 }

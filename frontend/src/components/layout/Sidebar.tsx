@@ -12,7 +12,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { role } = useAuth();
 
-  const items = NAV_ITEMS.filter((item) => canAccessNavItem(item, role ?? undefined));
+  const items = role
+    ? NAV_ITEMS.filter((item) => canAccessNavItem(item, role))
+    : NAV_ITEMS;
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-surface">
