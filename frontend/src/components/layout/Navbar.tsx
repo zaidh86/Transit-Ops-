@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { ROLE_LABELS } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,38 +44,47 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
         </div>
       </div>
 
-      {user && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors hover:bg-surface-raised">
-              <div className="hidden text-right sm:block">
-                <div className="text-sm font-medium leading-none text-foreground">
-                  {user.name}
+      <div className="flex items-center gap-2">
+        <AnimatedThemeToggler
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface-raised text-foreground transition-colors hover:border-border-strong hover:bg-surface"
+          aria-label="Toggle theme"
+          variant="circle"
+          fromCenter
+        />
+
+        {user && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors hover:bg-surface-raised">
+                <div className="hidden text-right sm:block">
+                  <div className="text-sm font-medium leading-none text-foreground">
+                    {user.name}
+                  </div>
+                  <div className="mt-1 text-xs text-muted">
+                    {ROLE_LABELS[user.role]}
+                  </div>
                 </div>
-                <div className="mt-1 text-xs text-muted">
-                  {ROLE_LABELS[user.role]}
-                </div>
-              </div>
-              <Avatar>
-                <AvatarFallback>{initials(user.name)}</AvatarFallback>
-              </Avatar>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <UserIcon className="h-4 w-4" />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem destructive onClick={logout}>
-              <LogOut className="h-4 w-4" />
-              Log out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+                <Avatar>
+                  <AvatarFallback>{initials(user.name)}</AvatarFallback>
+                </Avatar>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <UserIcon className="h-4 w-4" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem destructive onClick={logout}>
+                <LogOut className="h-4 w-4" />
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
     </header>
   );
 }

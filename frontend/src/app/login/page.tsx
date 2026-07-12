@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 export default function LoginPage() {
 	return (
@@ -46,7 +47,15 @@ function LoginForm() {
 	}
 
 	return (
-		<div className="grid min-h-screen lg:grid-cols-2">
+		<div className="relative grid min-h-screen lg:grid-cols-2">
+			<div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
+				<AnimatedThemeToggler
+					className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-surface/80 text-foreground backdrop-blur transition-colors hover:border-border-strong hover:bg-surface"
+					aria-label="Toggle theme"
+					variant="circle"
+					fromCenter
+				/>
+			</div>
 			<div className="relative hidden overflow-hidden border-r border-border bg-surface lg:flex lg:flex-col lg:justify-between lg:p-10">
 				<RoutePathBackdrop />
 
