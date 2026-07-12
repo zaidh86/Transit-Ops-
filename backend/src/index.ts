@@ -4,6 +4,7 @@ import morgan from "morgan";
 import { env } from "./config/env";
 import { prisma } from "./config/db";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { authRouter } from "./modules/auth/auth.routes";
 
 const app = express();
 
@@ -21,7 +22,9 @@ app.get("/api/health", async (_req, res) => {
   });
 });
 
-// Module routers will be mounted here (auth, vehicles, drivers, trips, ...)
+app.use("/api/auth", authRouter);
+
+// Module routers will continue to be mounted here (vehicles, drivers, trips, ...)
 
 // ---------- Error handling (must stay last) ----------
 app.use(notFoundHandler);

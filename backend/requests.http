@@ -1,9 +1,96 @@
 ### TransitOps API — living contract & test file
 ### Base URL for all requests; Bobby: same value as NEXT_PUBLIC_API_URL
-@baseUrl = http://localhost:5000/api
+@baseUrl = http://localhost:3001/api
 
 ### Health check — verifies server + database connectivity
 GET {{baseUrl}}/health
 
 ### Unknown route — demonstrates the standard error envelope
 GET {{baseUrl}}/does-not-exist
+
+
+### ==================== AUTH (Module 2) ====================
+
+### Register: Fleet Manager
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Fatima Khan",
+  "email": "fleet@transitops.dev",
+  "password": "password123",
+  "role": "FLEET_MANAGER"
+}
+
+### Register: Driver (dispatcher persona per problem statement)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Alex Verma",
+  "email": "driver@transitops.dev",
+  "password": "password123",
+  "role": "DRIVER"
+}
+
+### Register: Safety Officer
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Sana Iqbal",
+  "email": "safety@transitops.dev",
+  "password": "password123",
+  "role": "SAFETY_OFFICER"
+}
+
+### Register: Financial Analyst
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Rohan Mehta",
+  "email": "finance@transitops.dev",
+  "password": "password123",
+  "role": "FINANCIAL_ANALYST"
+}
+
+### Login (response token is captured into {{token}} below)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "fleet@transitops.dev",
+  "password": "password123"
+}
+
+### Token captured from the login response above
+@token = {{login.response.body.data.token}}
+
+### Current user (session restore endpoint for the frontend)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbXJoanM0a3AwMDAzb3h2eTZyNjB0YTVnIiwiZW1haWwiOiJmbGVldEB0cmFuc2l0b3BzLmRldiIsIm5hbWUiOiJGYXRpbWEgS2hhbiIsInJvbGUiOiJGTEVFVF9NQU5BR0VSIiwiaWF0IjoxNzgzODQ2MTE3LCJleHAiOjE3ODM4NzQ5MTd9.LBpjNvzWVxBapZgoTMohxuk52Opwhh7eEJ7kO0IGKAg
+
+### Login with wrong password → expect 401, generic message
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "fleet@transitops.dev",
+  "password": "wrong-password"
+}
+
+### /me without a token → expect 401
+GET {{baseUrl}}/auth/me
+
+### Register with invalid role → expect 400 with field details
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Bad Role",
+  "email": "bad@transitops.dev",
+  "password": "password123",
+  "role": "ADMIN"
+}
