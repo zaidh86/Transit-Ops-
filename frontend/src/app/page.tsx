@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { AppLogo } from "@/components/branding/AppLogo";
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -97,15 +98,7 @@ export default function Home() {
 
       <header className="sticky top-0 z-50 border-b border-border/80 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-10">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-accent shadow-sm">
-              <Truck className="h-4 w-4" />
-            </div>
-            <div>
-              <div className="font-display text-base font-semibold tracking-tight text-foreground">TransitOps</div>
-              <div className="text-[10px] uppercase tracking-[0.28em] text-muted-2">Dispatch console</div>
-            </div>
-          </Link>
+          <AppLogo size={36} labelClassName="text-base text-foreground" />
 
           <nav className="hidden items-center gap-6 lg:flex">
             {navLinks.map((item) => (

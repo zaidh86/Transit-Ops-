@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Sidebar } from "./Sidebar";
 import { Navbar } from "./Navbar";
 import { useAuth } from "@/lib/auth-context";
-import { Truck } from "lucide-react";
+import { AppLogo } from "@/components/branding/AppLogo";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { isLoading } = useAuth();
@@ -19,7 +19,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           transition={{ repeat: Infinity, duration: 1.4 }}
           className="flex items-center gap-2 text-muted"
         >
-          <Truck className="h-5 w-5" />
+          <AppLogo size={20} showLabel={false} />
           <span className="font-mono text-xs uppercase tracking-widest">
             Loading console…
           </span>

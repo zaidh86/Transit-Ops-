@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Truck } from "lucide-react";
 import { NAV_ITEMS, canAccessNavItem } from "@/lib/constants";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+import { AppLogo } from "@/components/branding/AppLogo";
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
@@ -19,12 +19,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-surface">
       <div className="flex h-14 items-center gap-2 border-b border-border px-5">
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/15 text-accent">
-          <Truck className="h-4 w-4" />
-        </div>
-        <span className="font-display text-sm font-semibold tracking-tight">
-          TransitOps
-        </span>
+        <AppLogo size={28} labelClassName="text-sm" />
       </div>
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-4">

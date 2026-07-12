@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono, Geist } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
 import { cn } from "@/lib/utils";
@@ -39,12 +40,9 @@ export default function RootLayout({
     >
       <head />
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "(function(){try{var t=localStorage.getItem('theme');var p=window.matchMedia('(prefers-color-scheme: dark)').matches;var d=t?t==='dark':p;document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';}catch(e){}})();",
-          }}
-        />
+        <Script id="theme-bootstrap" strategy="beforeInteractive">
+          {"(function(){try{var t=localStorage.getItem('theme');var p=window.matchMedia('(prefers-color-scheme: dark)').matches;var d=t?t==='dark':p;document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';}catch(e){}})();"}
+        </Script>
         <Providers>{children}</Providers>
       </body>
     </html>

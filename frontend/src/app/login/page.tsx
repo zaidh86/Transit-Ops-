@@ -4,13 +4,14 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Loader2, Truck } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { AppLogo } from "@/components/branding/AppLogo";
 
 export default function LoginPage() {
 	return (
@@ -60,10 +61,7 @@ function LoginForm() {
 				<RoutePathBackdrop />
 
 				<div className="relative z-10 flex items-center gap-2">
-					<div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/15 text-accent">
-						<Truck className="h-4 w-4" />
-					</div>
-					<span className="font-display text-lg font-semibold tracking-tight">TransitOps</span>
+					<AppLogo size={32} labelClassName="text-lg" />
 				</div>
 
 				<div className="relative z-10 max-w-sm space-y-3">
@@ -91,10 +89,7 @@ function LoginForm() {
 					className="w-full max-w-sm"
 				>
 					<div className="mb-8 flex items-center gap-2 lg:hidden">
-						<div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/15 text-accent">
-							<Truck className="h-4 w-4" />
-						</div>
-						<span className="font-display text-lg font-semibold tracking-tight">TransitOps</span>
+						<AppLogo size={32} labelClassName="text-lg" />
 					</div>
 
 					<h1 className="font-display text-xl font-semibold text-foreground">Sign in to your console</h1>

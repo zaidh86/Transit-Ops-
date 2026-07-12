@@ -6,6 +6,7 @@ import { ROLE_LABELS } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { AppLogo } from "@/components/branding/AppLogo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,8 +40,8 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <div className="hidden text-sm text-muted lg:block">
-          Fleet operations overview
+        <div className="hidden lg:block">
+          <AppLogo size={28} labelClassName="text-sm" />
         </div>
       </div>
 
