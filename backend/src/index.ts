@@ -5,10 +5,14 @@ import { env } from "./config/env";
 import { prisma } from "./config/db";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { authRouter } from "./modules/auth/auth.routes";
+<<<<<<< HEAD
 import { driversRouter } from "./modules/drivers/drivers.routes";
 import { maintenanceRouter } from "./modules/maintenance/maintenance.routes";
 import { expensesRouter } from "./modules/expenses/expenses.routes";
 import { analyticsRouter } from "./modules/analytics/analytics.routes";
+=======
+import { vehicleRouter } from "./modules/vehicles/vehicle.routes";
+>>>>>>> 927dbf3c78145143dc1c6ea3215d76139eb592cf
 
 const app = express();
 
@@ -27,12 +31,16 @@ app.get("/api/health", async (_req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+<<<<<<< HEAD
 app.use("/api/drivers", driversRouter);
 app.use("/api/maintenance", maintenanceRouter);
 app.use("/api/expenses", expensesRouter);
 app.use("/api/analytics", analyticsRouter);
+=======
+app.use("/api/vehicles", vehicleRouter);
+>>>>>>> 927dbf3c78145143dc1c6ea3215d76139eb592cf
 
-// Module routers will continue to be mounted here (vehicles, drivers, trips, ...)
+// Module routers will continue to be mounted here (drivers, trips, ...)
 
 // ---------- Error handling (must stay last) ----------
 app.use(notFoundHandler);

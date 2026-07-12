@@ -55,7 +55,7 @@ Content-Type: application/json
   "role": "FINANCIAL_ANALYST"
 }
 
-### Login (response token is captured into {{token}} below)
+### Login as Fleet Manager (token auto-captured below)
 # @name login
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
@@ -65,12 +65,25 @@ Content-Type: application/json
   "password": "password123"
 }
 
-### Token captured from the login response above
+### Fleet Manager token
 @token = {{login.response.body.data.token}}
+
+### Login as Driver (used to demonstrate RBAC 403s)
+# @name loginDriver
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "driver@transitops.dev",
+  "password": "password123"
+}
+
+### Driver token
+@driverToken = {{loginDriver.response.body.data.token}}
 
 ### Current user (session restore endpoint for the frontend)
 GET {{baseUrl}}/auth/me
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbXJoanM0a3AwMDAzb3h2eTZyNjB0YTVnIiwiZW1haWwiOiJmbGVldEB0cmFuc2l0b3BzLmRldiIsIm5hbWUiOiJGYXRpbWEgS2hhbiIsInJvbGUiOiJGTEVFVF9NQU5BR0VSIiwiaWF0IjoxNzgzODQ2MTE3LCJleHAiOjE3ODM4NzQ5MTd9.LBpjNvzWVxBapZgoTMohxuk52Opwhh7eEJ7kO0IGKAg
+Authorization: Bearer {{token}}
 
 ### Login with wrong password → expect 401, generic message
 POST {{baseUrl}}/auth/login
@@ -94,3 +107,138 @@ Content-Type: application/json
   "password": "password123",
   "role": "ADMIN"
 }
+
+
+### ==================== VEHICLES (Module 3) ====================
+
+### Create vehicle: Van-05 (mirrors the spec's example workflow, step 1)
+# @name createVehicle
+POST {{baseUrl}}/vehicles
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "registrationNumber": "Van-05",
+  "name": "Tata Ace Van",
+  "type": "VAN",
+  "maxLoadCapacity": 500,
+  "odometer": 12500,
+  "acquisitionCost": 850000,
+  "region": "Hyderabad"
+}
+
+### Captured vehicle id
+@vehicleId = {{createVehicle.response.body.data.vehicle.id}}
+
+### Create vehicle: Truck-12 (second vehicle for filters + delete test)
+# @name createTruck
+POST {{baseUrl}}/vehicles
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "registrationNumber": "Truck-12",
+  "name": "Ashok Leyland Cargo",
+  "type": "TRUCK",
+  "maxLoadCapacity": 5000,
+  "odometer": 48000,
+  "acquisitionCost": 2400000,
+  "region": "Mumbai"
+}
+
+### Captured truck id
+@truckId = {{createTruck.response.body.data.vehicle.id}}
+
+### Duplicate registration number → expect 409
+POST {{baseUrl}}/vehicles
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "registrationNumber": "Van-05",
+  "name": "Duplicate Van",
+  "type": "VAN",
+  "maxLoadCapacity": 400,
+  "acquisitionCost": 500000
+}
+
+### Invalid type → expect 400 with field details
+POST {{baseUrl}}/vehicles
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "registrationNumber": "Bus-01",
+  "name": "City Bus",
+  "type": "BUS",
+  "maxLoadCapacity": 3000,
+  "acquisitionCost": 1500000
+}
+
+### Create as Driver role → expect 403 (RBAC)
+POST {{baseUrl}}/vehicles
+Content-Type: application/json
+Authorization: Bearer {{driverToken}}
+
+{
+  "registrationNumber": "Van-99",
+  "name": "Unauthorized Van",
+  "type": "VAN",
+  "maxLoadCapacity": 300,
+  "acquisitionCost": 400000
+}
+
+### List all vehicles
+GET {{baseUrl}}/vehicles
+Authorization: Bearer {{token}}
+
+### List with filters: available vans (dashboard filter contract, spec 3.2)
+GET {{baseUrl}}/vehicles?status=AVAILABLE&type=VAN
+Authorization: Bearer {{token}}
+
+### List with region filter
+GET {{baseUrl}}/vehicles?region=Hyderabad
+Authorization: Bearer {{token}}
+
+### Search by registration/name
+GET {{baseUrl}}/vehicles?search=van
+Authorization: Bearer {{token}}
+
+### Invalid filter value → expect 400
+GET {{baseUrl}}/vehicles?status=PARKED
+Authorization: Bearer {{token}}
+
+### Get vehicle by id
+GET {{baseUrl}}/vehicles/{{vehicleId}}
+Authorization: Bearer {{token}}
+
+### Get unknown vehicle → expect 404
+GET {{baseUrl}}/vehicles/unknown-id-123
+Authorization: Bearer {{token}}
+
+### Update vehicle: odometer correction + region change
+PATCH {{baseUrl}}/vehicles/{{vehicleId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "odometer": 12650,
+  "region": "Secunderabad"
+}
+
+### Manually setting ON_TRIP → expect 400 (dispatch owns this status)
+PATCH {{baseUrl}}/vehicles/{{vehicleId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "ON_TRIP"
+}
+
+### Delete truck (no history yet) → expect 200
+DELETE {{baseUrl}}/vehicles/{{truckId}}
+Authorization: Bearer {{token}}
+
+### Delete unknown vehicle → expect 404
+DELETE {{baseUrl}}/vehicles/unknown-id-123
+Authorization: Bearer {{token}}
