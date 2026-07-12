@@ -289,10 +289,10 @@ npm run dev
 
 | Member | Responsibility |
 |---------|----------------|
-| Zaid | Full Stack Developer |
-| Hadia Madam | Technical Lead |
-| Team Member | Frontend Development |
-| Team Member | Backend Development |
+| Zaid | Backend Development |
+| Bobby Anthene | Frontend Development |
+| Jabbar | Full Stack Developer |
+| Hadia Madam  | Technical Lead |
 
 ---
 
