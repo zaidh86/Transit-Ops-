@@ -1,0 +1,9 @@
+### TransitOps API — living contract & test file
+### Base URL for all requests; Bobby: same value as NEXT_PUBLIC_API_URL
+@baseUrl = http://localhost:5000/api
+
+### Health check — verifies server + database connectivity
+GET {{baseUrl}}/health
+
+### Unknown route — demonstrates the standard error envelope
+GET {{baseUrl}}/does-not-exist
