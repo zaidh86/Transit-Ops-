@@ -7,88 +7,101 @@ import {
   useEffect,
   useMemo,
   useState,
+  type ReactNode,
 } from "react";
-import Cookies from "js-cookie";
-import { jwtDecode } from "jwt-decode";
 import { useRouter } from "next/navigation";
-import api from "./api";
-import { TOKEN_COOKIE } from "./constants";
-import type { AuthResponse, JwtPayload, LoginPayload, Role, User } from "@/types";
+import {
+  api,
+  clearToken,
+  getToken,
+  registerUnauthorizedHandler,
+  setToken,
+} from "@/lib/api";
+import { ENDPOINTS } from "@/lib/constants";
+import type { AuthResponse, Role, User } from "@/lib/types";
 
 interface AuthContextValue {
   user: User | null;
   role: Role | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (payload: LoginPayload) => Promise<User>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
   hasRole: (...roles: Role[]) => boolean;
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | null>(null);
 
-function userFromToken(token: string): User | null {
-  try {
-    const decoded = jwtDecode<JwtPayload>(token);
-    if (decoded.exp * 1000 < Date.now()) return null;
-    return {
-      id: decoded.sub,
-      email: decoded.email,
-      role: decoded.role,
-      name: decoded.name ?? decoded.email,
-    };
-  } catch {
-    return null;
-  }
-}
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Hydrate from an existing cookie on first load (page refresh).
-  useEffect(() => {
-    const token = Cookies.get(TOKEN_COOKIE);
-    if (token) {
-      const decodedUser = userFromToken(token);
-      if (decodedUser) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing React state with the browser cookie on mount is the intended use of an effect here
-        setUser(decodedUser);
-      } else {
-        Cookies.remove(TOKEN_COOKIE);
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
-  const login = useCallback(async (payload: LoginPayload) => {
-    const { data } = await api.post<AuthResponse>("/auth/login", payload);
-    Cookies.set(TOKEN_COOKIE, data.token, {
-      expires: 1, // days
-      sameSite: "lax",
-    });
-    setUser(data.user ?? userFromToken(data.token));
-    return data.user;
-  }, []);
-
   const logout = useCallback(() => {
-    Cookies.remove(TOKEN_COOKIE);
+    clearToken();
     setUser(null);
-    router.push("/login");
+    router.replace("/login");
   }, [router]);
 
+  // A 401 on any authenticated request means the session died. The api layer
+  // calls this once, from one place, so we never get duplicate redirects.
+  useEffect(() => {
+    registerUnauthorizedHandler(() => {
+      clearToken();
+      setUser(null);
+      router.replace("/login");
+    });
+  }, [router]);
+
+  // Session restore. We ask the backend who we are rather than decoding the
+  // JWT locally: a locally-decoded token can be expired or revoked and still
+  // look valid, and /auth/me is the only thing that actually knows.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function restoreSession(): Promise<void> {
+      if (getToken()) {
+        try {
+          const { user: restored } = await api.get<{ user: User }>(
+            ENDPOINTS.auth.me
+          );
+          if (!cancelled) setUser(restored);
+        } catch {
+          // Expired or revoked. Drop it and fall through to signed-out.
+          clearToken();
+        }
+      }
+      if (!cancelled) setIsLoading(false);
+    }
+
+    void restoreSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { token, user: signedIn } = await api.post<AuthResponse>(
+      ENDPOINTS.auth.login,
+      { email, password }
+    );
+    setToken(token);
+    setUser(signedIn);
+    return signedIn;
+  }, []);
+
   const hasRole = useCallback(
-    (...roles: Role[]) => !!user && roles.includes(user.role),
+    (...roles: Role[]) => (user ? roles.includes(user.role) : false),
     [user]
   );
 
-  const value = useMemo(
+  const value = useMemo<AuthContextValue>(
     () => ({
       user,
       role: user?.role ?? null,
       isLoading,
-      isAuthenticated: !!user,
+      isAuthenticated: user !== null,
       login,
       logout,
       hasRole,
@@ -99,8 +112,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
-  return ctx;
+export function useAuth(): AuthContextValue {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used inside an <AuthProvider>");
+  }
+  return context;
 }

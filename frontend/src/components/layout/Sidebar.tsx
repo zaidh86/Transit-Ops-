@@ -12,9 +12,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { role } = useAuth();
 
-  const items = role
-    ? NAV_ITEMS.filter((item) => canAccessNavItem(item, role))
-    : NAV_ITEMS;
+  // Falling back to the full list when the role is unknown would flash links
+  // the user cannot open; showing nothing until we know is the honest default.
+  const items = NAV_ITEMS.filter((item) => canAccessNavItem(item, role));
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-surface">

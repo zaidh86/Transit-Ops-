@@ -446,23 +446,23 @@ Content-Type: application/json
 
 ### Dashboard KPIs (spec 3.2)
 GET {{baseUrl}}/analytics/dashboard
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbXJoanM0a3AwMDAzb3h2eTZyNjB0YTVnIiwiZW1haWwiOiJmbGVldEB0cmFuc2l0b3BzLmRldiIsIm5hbWUiOiJGYXRpbWEgS2hhbiIsInJvbGUiOiJGTEVFVF9NQU5BR0VSIiwiaWF0IjoxNzgzODU1NjQ1LCJleHAiOjE3ODM4ODQ0NDV9.KpMAQqVjFriwLm7Ifx2gskcED9GOHIWXeZfYEalzAhs
+Authorization: Bearer {{token}}
 
 ### Fleet summary — per-vehicle metrics (spec 3.8)
 GET {{baseUrl}}/analytics/fleet-summary
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbXJoanM0a3AwMDAzb3h2eTZyNjB0YTVnIiwiZW1haWwiOiJmbGVldEB0cmFuc2l0b3BzLmRldiIsIm5hbWUiOiJGYXRpbWEgS2hhbiIsInJvbGUiOiJGTEVFVF9NQU5BR0VSIiwiaWF0IjoxNzgzODU1NjQ1LCJleHAiOjE3ODM4ODQ0NDV9.KpMAQqVjFriwLm7Ifx2gskcED9GOHIWXeZfYEalzAhs
+Authorization: Bearer {{token}}
 
 ### Fleet summary as CSV download (spec 3.8: CSV export)
 GET {{baseUrl}}/analytics/fleet-summary?format=csv
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbXJoanM0a3AwMDAzb3h2eTZyNjB0YTVnIiwiZW1haWwiOiJmbGVldEB0cmFuc2l0b3BzLmRldiIsIm5hbWUiOiJGYXRpbWEgS2hhbiIsInJvbGUiOiJGTEVFVF9NQU5BR0VSIiwiaWF0IjoxNzgzODU1NjQ1LCJleHAiOjE3ODM4ODQ0NDV9.KpMAQqVjFriwLm7Ifx2gskcED9GOHIWXeZfYEalzAhs
+Authorization: Bearer {{token}}
 
-### Vehicle ROI (spec 3.8 formula with transparent components)
+### Vehicle ROI — as Financial Analyst, the second role allowed to read analytics
 GET {{baseUrl}}/analytics/vehicle-roi
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbXJoanM0a3AwMDAzb3h2eTZyNjB0YTVnIiwiZW1haWwiOiJmbGVldEB0cmFuc2l0b3BzLmRldiIsIm5hbWUiOiJGYXRpbWEgS2hhbiIsInJvbGUiOiJGTEVFVF9NQU5BR0VSIiwiaWF0IjoxNzgzODU1NjQ1LCJleHAiOjE3ODM4ODQ0NDV9.KpMAQqVjFriwLm7Ifx2gskcED9GOHIWXeZfYEalzAhs
+Authorization: Bearer {{financeToken}}
 
 ### Analytics as Safety Officer → expect 403 (RBAC)
 GET {{baseUrl}}/analytics/dashboard
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbXJoanM0a3AwMDAzb3h2eTZyNjB0YTVnIiwiZW1haWwiOiJmbGVldEB0cmFuc2l0b3BzLmRldiIsIm5hbWUiOiJGYXRpbWEgS2hhbiIsInJvbGUiOiJGTEVFVF9NQU5BR0VSIiwiaWF0IjoxNzgzODU1NjQ1LCJleHAiOjE3ODM4ODQ0NDV9.KpMAQqVjFriwLm7Ifx2gskcED9GOHIWXeZfYEalzAhs
+Authorization: Bearer {{safetyAnalyticsToken}}
 
 ### Analytics without a token → expect 401
 GET {{baseUrl}}/analytics/dashboard

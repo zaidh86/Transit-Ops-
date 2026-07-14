@@ -2,7 +2,7 @@
 
 import { Menu, LogOut, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { ROLE_LABELS } from "@/types";
+import { ROLE_LABELS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";

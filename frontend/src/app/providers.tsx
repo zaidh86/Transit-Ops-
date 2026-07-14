@@ -1,24 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth-context";
+import { ApiClientError } from "@/lib/api";
 
-function ThemeSync() {
-  useEffect(() => {
-    const storedTheme = window.localStorage.getItem("theme");
-    const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? true;
-    const theme = storedTheme ?? (prefersDark ? "dark" : "light");
-
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    document.documentElement.style.colorScheme = theme;
-  }, []);
-
-  return null;
-}
-
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children }: { children: ReactNode }) {
+  // Created once per mount rather than at module scope, so that server renders
+  // never share a cache between requests.
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -26,7 +16,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
           queries: {
             staleTime: 30_000,
             refetchOnWindowFocus: false,
-            retry: 1,
+            retry: (failureCount, error) => {
+              // 4xx responses are decisions, not glitches: a 401, 403, 404 or a
+              // 409 business-rule refusal will say the same thing every time.
+              // Retrying them just delays the error the user needs to see.
+              if (
+                error instanceof ApiClientError &&
+                error.status >= 400 &&
+                error.status < 500
+              ) {
+                return false;
+              }
+              return failureCount < 2;
+            },
+          },
+          mutations: {
+            retry: false,
           },
         },
       })
@@ -34,11 +39,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeSync />
       <AuthProvider>
         {children}
         <Toaster
-          theme="dark"
           position="top-right"
           toastOptions={{
             style: {

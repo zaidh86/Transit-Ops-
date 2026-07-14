@@ -1,81 +1,233 @@
 "use client";
 
-import Link from "next/link";
+import { useMemo, useState } from "react";
+import { Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { RoleGuard } from "@/components/auth/RoleGuard";
+import { PageHeader } from "@/components/feature/page-header";
+import { StatGrid } from "@/components/feature/stat-grid";
 import { Button } from "@/components/ui/button";
-import { ModulePage } from "@/components/feature/ModulePage";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { DataTable, type Column } from "@/components/ui/data-table";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { ErrorState } from "@/components/ui/states";
+import {
+  downloadFleetSummaryCsv,
+  useFleetSummary,
+} from "@/lib/queries/analytics";
+import { VEHICLE_STATUS_META } from "@/lib/constants";
+import {
+  formatCurrency,
+  formatEfficiency,
+  formatKilometres,
+  formatLitres,
+  formatRoi,
+} from "@/lib/format";
+import { cn } from "@/lib/utils";
+import type { VehicleMetrics } from "@/lib/types";
 
-const metrics = [
-  { label: "Fuel efficiency", value: "7.4 km/L" },
-  { label: "Fleet utilization", value: "68%" },
-  { label: "Operational cost", value: "$2.1k" },
-  { label: "Vehicle ROI", value: "14.8%" },
-];
+function AnalyticsContent() {
+  const {
+    data: fleet = [],
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useFleetSummary();
 
-const chartBars = [
-  { label: "Fuel", value: 72 },
-  { label: "Maintenance", value: 38 },
-  { label: "Tolls", value: 24 },
-  { label: "Other", value: 14 },
-];
+  const [isExporting, setIsExporting] = useState(false);
 
+  const stats = useMemo(() => {
+    const totalRevenue = fleet.reduce((sum, row) => sum + row.revenue, 0);
+    const totalOperationalCost = fleet.reduce(
+      (sum, row) => sum + row.operationalCost,
+      0
+    );
+    const totalDistance = fleet.reduce((sum, row) => sum + row.totalDistance, 0);
+    const totalFuel = fleet.reduce((sum, row) => sum + row.fuelConsumed, 0);
+
+    return [
+      { label: "Total revenue", value: formatCurrency(totalRevenue) },
+      {
+        label: "Operational cost",
+        value: formatCurrency(totalOperationalCost),
+        hint: "Fuel + maintenance.",
+      },
+      {
+        label: "Net margin",
+        value: formatCurrency(totalRevenue - totalOperationalCost),
+      },
+      {
+        label: "Fleet efficiency",
+        value: formatEfficiency(totalFuel > 0 ? totalDistance / totalFuel : null),
+      },
+    ];
+  }, [fleet]);
+
+  async function handleExport(): Promise<void> {
+    setIsExporting(true);
+    try {
+      await downloadFleetSummaryCsv();
+      toast.success("Fleet summary exported");
+    } catch (caught) {
+      toast.error(
+        caught instanceof Error ? caught.message : "Export failed"
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  const columns: Column<VehicleMetrics>[] = [
+    {
+      id: "vehicle",
+      header: "Vehicle",
+      cell: (row) => (
+        <div>
+          <p className="font-mono text-xs text-foreground">
+            {row.registrationNumber}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-2">{row.name}</p>
+        </div>
+      ),
+    },
+    {
+      id: "status",
+      header: "Status",
+      hideOnMobile: true,
+      cell: (row) => {
+        const meta = VEHICLE_STATUS_META[row.status];
+        return <StatusBadge label={meta.label} color={meta.color} />;
+      },
+    },
+    {
+      id: "trips",
+      header: "Trips",
+      hideOnMobile: true,
+      cell: (row) => (
+        <span className="font-mono text-xs text-muted">{row.tripsCompleted}</span>
+      ),
+    },
+    {
+      id: "distance",
+      header: "Distance",
+      hideOnMobile: true,
+      cell: (row) => (
+        <span className="text-muted">{formatKilometres(row.totalDistance)}</span>
+      ),
+    },
+    {
+      id: "fuel",
+      header: "Fuel",
+      hideOnMobile: true,
+      cell: (row) => (
+        <span className="text-muted">{formatLitres(row.fuelConsumed)}</span>
+      ),
+    },
+    {
+      id: "efficiency",
+      header: "Efficiency",
+      hideOnMobile: true,
+      cell: (row) => (
+        <span className="font-mono text-xs text-muted">
+          {formatEfficiency(row.fuelEfficiency)}
+        </span>
+      ),
+    },
+    {
+      id: "operational",
+      header: "Op. cost",
+      hideOnMobile: true,
+      cell: (row) => (
+        <span className="text-muted">{formatCurrency(row.operationalCost)}</span>
+      ),
+    },
+    {
+      id: "revenue",
+      header: "Revenue",
+      cell: (row) => (
+        <span className="text-foreground">{formatCurrency(row.revenue)}</span>
+      ),
+    },
+    {
+      id: "roi",
+      header: "ROI",
+      className: "text-right",
+      cell: (row) => (
+        <span
+          className={cn(
+            "font-mono text-xs",
+            row.roi === null
+              ? "text-muted-2"
+              : row.roi >= 0
+                ? "text-status-available"
+                : "text-status-suspended"
+          )}
+        >
+          {formatRoi(row.roi)}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Reports / analytics"
+        title="Reports and analytics"
+        description="Per-vehicle distance, fuel efficiency, operational cost and return on investment, computed from completed trips."
+        actions={
+          <Button onClick={() => void handleExport()} disabled={isExporting}>
+            {isExporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            Export CSV
+          </Button>
+        }
+      />
+
+      <StatGrid stats={stats} isLoading={isPending} />
+
+      {isError ? (
+        <ErrorState error={error} onRetry={() => void refetch()} />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Fleet summary</CardTitle>
+            <CardDescription>
+              ROI is (revenue − operational cost) ÷ acquisition cost. Efficiency
+              is distance ÷ fuel consumed, and is blank until a trip has been
+              completed with a fuel reading.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DataTable
+              columns={columns}
+              rows={fleet}
+              getRowId={(row) => row.vehicleId}
+              isLoading={isPending}
+              emptyMessage="No vehicles to report on yet."
+            />
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+/** The analytics endpoints are Fleet Manager + Financial Analyst only. */
 export default function AnalyticsPage() {
   return (
-    <ModulePage
-      eyebrow="Reports / analytics"
-      title="Reports and analytics"
-      description="Operational metrics help surface fuel efficiency, fleet utilization, cost trends, and ROI from the same dashboard language used across the app."
-      actions={
-        <>
-          <Button asChild variant="secondary">
-            <Link href="/dashboard">Back to dashboard</Link>
-          </Button>
-          <Button>Export CSV</Button>
-        </>
-      }
-      stats={metrics}
-      panels={[
-        {
-          title: "Cost profile",
-          description: "A lightweight chart treatment keeps the screen useful even before chart libraries are wired in.",
-          accentColor: "var(--status-ontrip)",
-          children: (
-            <div className="space-y-3">
-              {chartBars.map((bar) => (
-                <div key={bar.label} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-foreground">{bar.label}</span>
-                    <span className="font-mono text-xs text-muted">{bar.value}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-background/80">
-                    <div
-                      className="h-2 rounded-full bg-accent"
-                      style={{ width: `${bar.value}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ),
-        },
-        {
-          title: "Formula notes",
-          description: "These notes mirror the product spec so the future backend implementation can plug in cleanly.",
-          accentColor: "var(--status-available)",
-          children: (
-            <div className="space-y-3 text-sm text-muted">
-              <div className="rounded-md border border-border bg-background/50 p-4">
-                Fuel efficiency = distance driven divided by fuel consumed.
-              </div>
-              <div className="rounded-md border border-border bg-background/50 p-4">
-                Vehicle ROI = (revenue - maintenance - fuel) / acquisition cost.
-              </div>
-              <div className="rounded-md border border-border bg-background/50 p-4">
-                CSV export is already represented in the action row; PDF export can be added later if needed.
-              </div>
-            </div>
-          ),
-        },
-      ]}
-    />
+    <RoleGuard allow={["FLEET_MANAGER", "FINANCIAL_ANALYST"]}>
+      <AnalyticsContent />
+    </RoleGuard>
   );
 }
